@@ -86,3 +86,4 @@ X_train_balanced, y_train_balanced = smote.fit_resample(X_train_final, y_train)
 # === 13. Verifica nuova distribuzione ===
 print("\nDistribuzione delle classi dopo SMOTE:")
 print(y_train_balanced.value_counts(normalize=True))
+
