@@ -78,7 +78,6 @@ X_test_final = pd.concat([X_test_num_df.reset_index(drop=True),
 print("\nFinal train shape:", X_train_final.shape)
 print("Final test shape:", X_test_final.shape)
 print("y_train distribution:\n", y_train.value_counts(normalize=True))
-print("y_train distribution:\n", y_train.value_counts(normalize=True))
 
 # === 12. Applica SMOTE per bilanciare le classi ===
 smote = SMOTE(random_state=42)
