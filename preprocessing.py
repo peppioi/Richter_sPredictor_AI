@@ -74,6 +74,33 @@ X_train_final = pd.concat([X_train_num_df.reset_index(drop=True),
 X_test_final = pd.concat([X_test_num_df.reset_index(drop=True), 
                           X_test_cat_df.reset_index(drop=True)], axis=1)
 
+from sklearn.model_selection import train_test_split
+from imblearn.over_sampling import SMOTE
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, f1_score, classification_report
+
+# === SPLIT ===
+X_train_split, X_val_split, y_train_split, y_val_split = train_test_split(
+    X_train_final, y_train, test_size=0.2, stratify=y_train, random_state=42
+)
+
+# === SMOTE SOLO SUL TRAINING ===
+smote = SMOTE(random_state=42)
+X_train_bal, y_train_bal = smote.fit_resample(X_train_split, y_train_split)
+
+# === TRAINING ===
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train_bal, y_train_bal)
+
+# === VALUTAZIONE SU VALIDATION NON BILANCIATA ===
+y_val_pred = model.predict(X_val_split)
+
+print("\n=== Valutazione su validation set ===")
+print("Accuracy:", accuracy_score(y_val_split, y_val_pred))
+print("F1 micro:", f1_score(y_val_split, y_val_pred, average='micro'))
+print("F1 macro:", f1_score(y_val_split, y_val_pred, average='macro'))
+print("\nReport dettagliato:\n", classification_report(y_val_split, y_val_pred))
+
 # === 11. Verifica finale ===
 print("\nFinal train shape:", X_train_final.shape)
 print("Final test shape:", X_test_final.shape)
