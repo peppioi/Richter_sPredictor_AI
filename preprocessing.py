@@ -50,3 +50,5 @@ X_test_final = pd.concat([X_test.drop(columns=categorical_cols).reset_index(drop
 print("\nFinal train shape:", X_train_final.shape)
 print("Final test shape:", X_test_final.shape)
 print("y_train distribution:\n", y_train.value_counts(normalize=True))
+
+#
