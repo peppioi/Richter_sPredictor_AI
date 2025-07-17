@@ -1,25 +1,28 @@
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, VotingClassifier
+from sklearn.linear_model import LogisticRegression
+from xgboost import XGBClassifier
 from sklearn.metrics import accuracy_score, f1_score, classification_report
-import pandas as pd
-from preprocessing import X_train_balanced, y_train_balanced, X_test_final
+from preprocessing import X_train, y_train, X_val_split, y_val_split, X_train_bal, y_train_bal
 
-# === 1. Training ===
-model = RandomForestClassifier(n_estimators=100, random_state=42)
-model.fit(X_train_balanced, y_train_balanced)
+# === Modelli base ===
+rf = RandomForestClassifier(n_estimators=100, random_state=42)
+xgb = XGBClassifier(n_estimators=100, learning_rate=0.1, eval_metric='mlogloss', random_state=42)
+lr = LogisticRegression(max_iter=1000, random_state=42)
 
-# === 2. Valutazione su train (solo esempio, meglio validare con split) ===
-y_pred_train = model.predict(X_train_balanced)
-print("\n=== Valutazione su dati di training ===")
-print("Accuracy:", accuracy_score(y_train_balanced, y_pred_train))
-print("F1 (micro):", f1_score(y_train_balanced, y_pred_train, average='micro'))
-print("F1 (macro):", f1_score(y_train_balanced, y_pred_train, average='macro'))
-print("\nReport dettagliato:\n", classification_report(y_train_balanced, y_pred_train))
+# === Ensemble Voting === (con hard voting per stabilità)
+ensemble = VotingClassifier(
+    estimators=[('rf', rf), ('xgb', xgb), ('lr', lr)],
+    voting='hard'  # evita problemi con predict_proba
+)
 
-# === 3. Previsione sul test set ===
-y_test_pred = model.predict(X_test_final)
+# === Training su dati bilanciati ===
+ensemble.fit(X_train_bal, y_train_bal)
 
-# === 4. Creazione del file di submission ===
-submission = pd.read_csv("submission_format.csv")  # contiene solo building_id
-submission["damage_grade"] = y_test_pred
-submission.to_csv("submission.csv", index=False)
-print("\nFile 'submission.csv' creato con successo!")
+# === Validazione su set non bilanciato ===
+y_val_pred = ensemble.predict(X_val_split)
+
+print("\n=== Valutazione VotingClassifier (hard) ===")
+print("Accuracy:", accuracy_score(y_val_split, y_val_pred))
+print("F1 micro:", f1_score(y_val_split, y_val_pred, average='micro'))
+print("F1 macro:", f1_score(y_val_split, y_val_pred, average='macro'))
+print("\nReport dettagliato:\n", classification_report(y_val_split, y_val_pred))

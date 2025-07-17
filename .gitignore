@@ -8,3 +8,5 @@ Terremoto/
 
 __pycache__/
 *.pyc
+
+submission_format.csv
