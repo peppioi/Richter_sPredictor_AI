@@ -14,3 +14,6 @@ submission_format.csv
 *.ipynb_checkpoints
 *.ipynb
 *.pdf
+*.npy
+*.joblib
+submission_*.csv
