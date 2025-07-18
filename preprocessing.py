@@ -4,6 +4,7 @@ from imblearn.over_sampling import SMOTE
 import numpy as np
 from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
+import joblib
 #from sklearn.ensemble import RandomForestClassifier
 #from sklearn.metrics import accuracy_score, f1_score, classification_report
 
@@ -140,31 +141,8 @@ print("\n=== SMOTE applicato ===")
 print("Distribuzione y_train_bal (dopo oversampling):")
 print(y_train_bal.value_counts(normalize=True))
 
+# Salvataggio dei dati preprocessati
+joblib.dump((X_train_bal, y_train_bal, X_val_split, y_val_split, X_test_final), "preprocessed_data.pkl")
 
-""" # === TRAINING ===
-model = RandomForestClassifier(n_estimators=100, random_state=42)
-model.fit(X_train_bal, y_train_bal)
-
-# === VALUTAZIONE SU VALIDATION NON BILANCIATA ===
-y_val_pred = model.predict(X_val_split)
-
-print("\n=== Valutazione su validation set ===")
-print("Accuracy:", accuracy_score(y_val_split, y_val_pred))
-print("F1 micro:", f1_score(y_val_split, y_val_pred, average='micro'))
-print("F1 macro:", f1_score(y_val_split, y_val_pred, average='macro'))
-print("\nReport dettagliato:\n", classification_report(y_val_split, y_val_pred))
-
-# === 11. Verifica finale ===
-print("\nFinal train shape:", X_train_final.shape)
-print("Final test shape:", X_test_final.shape)
-print("y_train distribution:\n", y_train.value_counts(normalize=True))
-
-# === 12. Applica SMOTE per bilanciare le classi ===
-smote = SMOTE(random_state=42)
-X_train_balanced, y_train_balanced = smote.fit_resample(X_train_final, y_train)
-
-# === 13. Verifica nuova distribuzione ===
-print("\nDistribuzione delle classi dopo SMOTE:")
-<<<<<<< HEAD
-print(y_train_balanced.value_counts(normalize=True)) """
+print("\n=== Dati preprocessati salvati in 'preprocessed_data.pkl' ===")
 
