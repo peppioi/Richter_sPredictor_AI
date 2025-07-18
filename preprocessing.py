@@ -24,7 +24,7 @@ print("Missing values in test_values:\n", test_values.isnull().sum().sum())
 # ===Merge feature e label ===
 train_df = pd.merge(train_values, train_labels, on="building_id")
 
-# === 4. Separazione X, y e test ===
+# === Separazione X, y e test ===
 X_train = train_df.drop(columns=["building_id", "damage_grade"])
 y_train = train_df["damage_grade"]
 X_test = test_values.drop(columns=["building_id"])
@@ -52,6 +52,7 @@ X_test_wins = winsorize(X_test[numeric_cols], numeric_cols)
 
 # Sostituisci le colonne numeriche originali con quelle winsorizzate
 X_train[numeric_cols] = X_train_wins
+<<<<<<< HEAD
 X_test[numeric_cols] = X_test_wins """
 
 # === Winsorization corretta: calcolo limiti dal train ===
@@ -120,7 +121,6 @@ print("\n=== Unione numeriche + categoriche completata ===")
 print("Shape finale X_train:", X_train_final.shape)
 print("Shape finale X_test:", X_test_final.shape)
 
-
 # === SPLIT ===
 X_train_split, X_val_split, y_train_split, y_val_split = train_test_split(
     X_train_final, y_train, test_size=0.2, stratify=y_train, random_state=42
@@ -131,7 +131,6 @@ print("Shape X_train_split:", X_train_split.shape)
 print("Shape X_val_split:", X_val_split.shape)
 print("Distribuzione y_train_split:")
 print(y_train_split.value_counts(normalize=True))
-
 
 # === SMOTE SOLO SUL TRAINING ===
 smote = SMOTE(random_state=42)
@@ -166,5 +165,6 @@ X_train_balanced, y_train_balanced = smote.fit_resample(X_train_final, y_train)
 
 # === 13. Verifica nuova distribuzione ===
 print("\nDistribuzione delle classi dopo SMOTE:")
+<<<<<<< HEAD
 print(y_train_balanced.value_counts(normalize=True)) """
 

@@ -10,3 +10,10 @@ __pycache__/
 *.pyc
 
 submission_format.csv
+*.csv
+*.ipynb_checkpoints
+*.ipynb
+*.pdf
+*.npy
+*.joblib
+submission_*.csv
