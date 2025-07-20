@@ -66,7 +66,6 @@ def apply_winsor_limits(df, limits):
         df_capped[col] = np.clip(df[col], low, high)
     return df_capped
 
-
 # Calcola i limiti sul training set
 winsor_limits = compute_winsor_limits(X_train, numeric_cols)
 
