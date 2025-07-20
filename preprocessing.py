@@ -5,8 +5,8 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
 import joblib
-#from sklearn.ensemble import RandomForestClassifier
-#from sklearn.metrics import accuracy_score, f1_score, classification_report
+from sklearn.feature_selection import VarianceThreshold, SelectKBest, f_classif
+
 
 # ===Caricamento dati ===
 train_values = pd.read_csv("train_values.csv")
@@ -132,6 +132,37 @@ print("Shape X_train_split:", X_train_split.shape)
 print("Shape X_val_split:", X_val_split.shape)
 print("Distribuzione y_train_split:")
 print(y_train_split.value_counts(normalize=True))
+
+# === FEATURE SELECTION ===
+# Rimuovi le feature con varianza molto bassa (es. dummies inutili)
+var_thresh = VarianceThreshold(threshold=0.01)
+X_train_split_var = var_thresh.fit_transform(X_train_split)
+X_val_split_var = var_thresh.transform(X_val_split)
+
+# Stampa il numero di feature rimaste dopo VarianceThreshold
+num_features_var = X_train_split_var.shape[1]
+print(f"\n=== VarianceThreshold completato ===")
+print(f"Numero di feature dopo rimozione bassa varianza: {num_features_var}")
+
+# Seleziona le migliori k feature secondo ANOVA F-test
+k_best = 50  # puoi aumentare o diminuire dopo test
+selector = SelectKBest(score_func=f_classif, k=k_best)
+X_train_split_sel = selector.fit_transform(X_train_split_var, y_train_split)
+X_val_split_sel = selector.transform(X_val_split_var)
+
+# Recupera i nomi delle colonne selezionate
+# Serve ricostruire i nomi dopo VarianceThreshold
+feature_names_after_var = X_train_split.columns[var_thresh.get_support()]
+selected_feature_names = feature_names_after_var[selector.get_support()]
+
+print(f"\n=== SelectKBest completato ===")
+print(f"Top {k_best} feature selezionate (ANOVA F-test):")
+for i, name in enumerate(selected_feature_names):
+    print(f"{i+1}. {name}")
+
+# Sovrascrivi le variabili da passare a SMOTE e ai modelli
+X_train_split = X_train_split_sel
+X_val_split = X_val_split_sel
 
 # === SMOTE SOLO SUL TRAINING ===
 smote = SMOTE(random_state=42)

@@ -18,3 +18,5 @@ submission_format.csv
 *.joblib
 submission_*.csv
 *.pkl
+
+catboost_info/
