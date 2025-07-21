@@ -6,6 +6,8 @@ from xgb_tuning import tune_xgboost
 import os
 from lightgbm import LGBMClassifier
 from sklearn.neural_network import MLPClassifier
+from mord import LogisticAT
+
 
 # === Carica i dati preprocessati ===
 X_train_bal, y_train_bal, X_val_split, y_val_split, _ = joblib.load("preprocessed_data.pkl")
@@ -25,7 +27,7 @@ print("F1 macro:", f1_score(y_val_split, y_pred_rf, average='macro'))
 print(classification_report(y_val_split, y_pred_rf))
 results['Random Forest'] = f1_score(y_val_split, y_pred_rf, average='macro')
 
-# === Modello 2: XGBoost (ottimizzato) ===
+""" # === Modello 2: XGBoost (ottimizzato) ===
 # Se esiste già il file del modello tunato, lo carica; altrimenti lo crea e salva
 if os.path.exists("best_xgb_model.pkl"):
     best_xgb = joblib.load("best_xgb_model.pkl")
@@ -35,7 +37,6 @@ else:
     best_xgb = tune_xgboost(X_train_bal, y_train_bal)
     joblib.dump(best_xgb, "best_xgb_model.pkl")
     print("Modello XGBoost ottimizzato salvato in 'best_xgb_model.pkl'")
-
 
 # Addestramento: rimappa le classi per XGBoost
 best_xgb.fit(X_train_bal, y_train_bal - 1)
@@ -48,7 +49,7 @@ print("Accuracy:", accuracy_score(y_val_split, y_pred_best_xgb))
 print("F1 micro:", f1_score(y_val_split, y_pred_best_xgb, average='micro'))
 print("F1 macro:", f1_score(y_val_split, y_pred_best_xgb, average='macro'))
 print(classification_report(y_val_split, y_pred_best_xgb))
-results['XGBoost'] = f1_score(y_val_split, y_pred_best_xgb, average='macro')
+results['XGBoost'] = f1_score(y_val_split, y_pred_best_xgb, average='macro') """
 
 # === Modello 3: CatBoost ===
 cat = CatBoostClassifier(iterations=100, verbose=0, random_state=42)

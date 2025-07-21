@@ -1,12 +1,13 @@
 import pandas as pd
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.preprocessing import OneHotEncoder, StandardScaler, RobustScaler
 from imblearn.over_sampling import SMOTE
 import numpy as np
 from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
 import joblib
-from sklearn.feature_selection import VarianceThreshold, SelectKBest, f_classif
-
+#from sklearn.feature_selection import VarianceThreshold, SelectKBest, f_classif
+from sklearn.feature_selection import SelectFromModel
+from sklearn.ensemble import RandomForestClassifier
 
 # ===Caricamento dati ===
 train_values = pd.read_csv("train_values.csv")
@@ -30,6 +31,17 @@ X_train = train_df.drop(columns=["building_id", "damage_grade"])
 y_train = train_df["damage_grade"]
 X_test = test_values.drop(columns=["building_id"])
 
+""" # === Feature Engineering ===
+X_train["building_volume"] = X_train["area_percentage"] * X_train["height_percentage"]
+X_test["building_volume"] = X_test["area_percentage"] * X_test["height_percentage"]
+
+X_train["age_per_floor"] = X_train["age"] / (X_train["count_floors_pre_eq"] + 1)
+X_test["age_per_floor"] = X_test["age"] / (X_test["count_floors_pre_eq"] + 1)
+
+X_train["floor_height_ratio"] = X_train["height_percentage"] / (X_train["count_floors_pre_eq"] + 1)
+X_test["floor_height_ratio"] = X_test["height_percentage"] / (X_test["count_floors_pre_eq"] + 1)
+ """
+
 # ===Riconoscimento automatico delle colonne ===
 categorical_cols = X_train.select_dtypes(include="object").columns.tolist()
 numeric_cols = X_train.select_dtypes(exclude="object").columns.tolist()
@@ -37,26 +49,26 @@ numeric_cols = X_train.select_dtypes(exclude="object").columns.tolist()
 print("\nCategorical columns:", categorical_cols)
 print("Numeric/binary columns:", numeric_cols)
 
-""" #=====GESTIONE FEATURE NUMERICHE =====
-# ===Winsorization per contenere gli outlier numerici ===
-def winsorize(df, cols, lower_percentile=0.01, upper_percentile=0.99):
-    capped_df = df.copy()
-    for col in cols:
-        lower = df[col].quantile(lower_percentile)
-        upper = df[col].quantile(upper_percentile)
-        capped_df[col] = np.clip(df[col], lower, upper)
-    return capped_df
+print("\n=== Conteggio outlier (percentili 1% e 99%) per feature numerica ===")
+outlier_counts = {}
 
-# Applica solo alle colonne numeriche, e riassegna una per una
-X_train_wins = winsorize(X_train[numeric_cols], numeric_cols)
-X_test_wins = winsorize(X_test[numeric_cols], numeric_cols)
+for col in numeric_cols:
+    unique_vals = X_train[col].nunique()
+    if unique_vals <= 2:
+        print(f"{col}: variabile binaria - outlier non applicabile")
+        continue
+    
+    q_low = X_train[col].quantile(0.01)
+    q_high = X_train[col].quantile(0.99)
+    count_low = (X_train[col] < q_low).sum()
+    count_high = (X_train[col] > q_high).sum()
+    total_outliers = count_low + count_high
+    outlier_counts[col] = total_outliers
+    print(f"{col}: {total_outliers} outlier ({count_low} < {q_low:.2f}, {count_high} > {q_high:.2f})")
 
-# Sostituisci le colonne numeriche originali con quelle winsorizzate
-X_train[numeric_cols] = X_train_wins
-<<<<<<< HEAD
-X_test[numeric_cols] = X_test_wins """
+print(f"\nTotale outlier sommati su tutte le feature non binarie: {sum(outlier_counts.values())}")
 
-# === Winsorization corretta: calcolo limiti dal train ===
+""" # === Winsorization corretta: calcolo limiti dal train ===
 def compute_winsor_limits(df, cols, lower=0.01, upper=0.99):
     return {col: (df[col].quantile(lower), df[col].quantile(upper)) for col in cols}
 
@@ -79,10 +91,10 @@ for col in numeric_cols[:3]:  # Mostra solo le prime 3 per brevità
     print(f"Colonna '{col}': limiti applicati [{low:.2f}, {high:.2f}]")
 
 print("Esempio valori dopo winsorization (train):")
-print(X_train[numeric_cols[:3]].describe())
+print(X_train[numeric_cols[:3]].describe()) """
 
 # === Scaling delle colonne numeriche ===
-scaler = StandardScaler()
+scaler = RobustScaler()
 X_train_num_scaled = scaler.fit_transform(X_train[numeric_cols])
 X_test_num_scaled = scaler.transform(X_test[numeric_cols])
 
@@ -132,9 +144,9 @@ print("Shape X_val_split:", X_val_split.shape)
 print("Distribuzione y_train_split:")
 print(y_train_split.value_counts(normalize=True))
 
-# === FEATURE SELECTION ===
+""" # === FEATURE SELECTION ===
 # Rimuovi le feature con varianza molto bassa (es. dummies inutili)
-var_thresh = VarianceThreshold(threshold=0.01)
+var_thresh = VarianceThreshold(threshold=0.001)
 X_train_split_var = var_thresh.fit_transform(X_train_split)
 X_val_split_var = var_thresh.transform(X_val_split)
 
@@ -144,7 +156,7 @@ print(f"\n=== VarianceThreshold completato ===")
 print(f"Numero di feature dopo rimozione bassa varianza: {num_features_var}")
 
 # Seleziona le migliori k feature secondo ANOVA F-test
-k_best = 50  # puoi aumentare o diminuire dopo test
+k_best = 75
 selector = SelectKBest(score_func=f_classif, k=k_best)
 X_train_split_sel = selector.fit_transform(X_train_split_var, y_train_split)
 X_val_split_sel = selector.transform(X_val_split_var)
@@ -156,6 +168,23 @@ selected_feature_names = feature_names_after_var[selector.get_support()]
 
 print(f"\n=== SelectKBest completato ===")
 print(f"Top {k_best} feature selezionate (ANOVA F-test):")
+for i, name in enumerate(selected_feature_names):
+    print(f"{i+1}. {name}") """
+
+# === FEATURE SELECTION INTELLIGENTE ===
+# Allena un modello per valutare l'importanza delle feature
+rf_selector = RandomForestClassifier(n_estimators=100, random_state=42, class_weight='balanced')
+rf_selector.fit(X_train_split, y_train_split)
+
+# Seleziona le feature più importanti
+sfm = SelectFromModel(rf_selector, threshold="median")  # puoi provare anche "mean" o un valore numerico
+X_train_split_sel = sfm.transform(X_train_split)
+X_val_split_sel = sfm.transform(X_val_split)
+
+selected_feature_names = X_train_split.columns[sfm.get_support()]
+
+print(f"\n=== SelectFromModel (Random Forest) completato ===")
+print(f"Feature selezionate: {len(selected_feature_names)}")
 for i, name in enumerate(selected_feature_names):
     print(f"{i+1}. {name}")
 

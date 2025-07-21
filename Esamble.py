@@ -4,7 +4,6 @@ from sklearn.ensemble import RandomForestClassifier
 from catboost import CatBoostClassifier
 from lightgbm import LGBMClassifier
 import joblib
-#from sklearn.ensemble import StackingClassifier
 
 # === Carica i dati preprocessati ===
 X_train_bal, y_train_bal, X_val_split, y_val_split, _ = joblib.load("preprocessed_data.pkl")
@@ -17,20 +16,6 @@ rf = RandomForestClassifier(n_estimators=100, class_weight='balanced', random_st
 cat = CatBoostClassifier(iterations=100, verbose=0, random_state=42)
 lgbm = LGBMClassifier(random_state=42)
 
-""" stacking_clf = StackingClassifier(
-    estimators=[
-        ('rf', rf),
-        ('cat', cat),
-        ('lgbm', lgbm),
-        ('xgb', best_xgb)
-    ],
-    final_estimator=RandomForestClassifier(n_estimators=100, random_state=42),
-    cv=5,
-    passthrough=True,  # opzionale, se vuoi che il meta-modello abbia anche gli input originali
-    n_jobs=-1
-) """
-
-
 # === Ensemble con pesi personalizzati ===
 voting_clf = VotingClassifier(
     estimators=[
@@ -40,25 +25,18 @@ voting_clf = VotingClassifier(
         ('xgb', best_xgb)
     ],
     voting='soft',
-    weights=[1, 1, 1, 2]  # XGBoost ha il doppio del peso degli altri
+    weights=[1, 1, 1, 2]  
 )
 
 # === Addestramento ensemble ===
-#stacking_clf.fit(X_train_bal, y_train_bal)
 voting_clf.fit(X_train_bal, y_train_bal)
 
 # === Valutazione ===
-#y_pred = stacking_clf.predict(X_val_split)
 y_pred = voting_clf.predict(X_val_split)
 
-print("\nEnsemble VotingClassifier (con pesi, XGB doppio peso)")
+print("\nEnsemble VotingClassifier")
 print("Accuracy:", accuracy_score(y_val_split, y_pred))
 print("F1 micro:", f1_score(y_val_split, y_pred, average='micro'))
 print("F1 macro:", f1_score(y_val_split, y_pred, average='macro'))
 print(classification_report(y_val_split, y_pred))
 
-""" print("\nEnsemble StackingClassifier (con pesi, XGB doppio peso)")
-print("Accuracy:", accuracy_score(y_val_split, y_pred))
-print("F1 micro:", f1_score(y_val_split, y_pred, average='micro'))
-print("F1 macro:", f1_score(y_val_split, y_pred, average='macro'))
-print(classification_report(y_val_split, y_pred)) """
