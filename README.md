@@ -7,7 +7,7 @@ Il progetto si basa sui dati reali del terremoto in Nepal del 2015 e mira a forn
 
 ## Dataset & Preprocessing
 
-Il progetto si basa sui dati della competizione "Nepal Earthquake Damage Assessment", che mette a disposizione informazioni dettagliate su oltre 260.000 edifici colpiti dal terremoto in Nepal nel 2015. I dati includono caratteristiche strutturali, materiali utilizzati, posizione geografica, e altre informazioni legali e urbanistiche. L’obiettivo è prevedere, per ciascun edificio, il livello di danno subito (1 = basso, 2 = medio, 3 = severo).
+Il progetto si basa sui dati della competizione " Nepal Earthquake Damage Assessment ", che mette a disposizione informazioni dettagliate su oltre 260.000 edifici colpiti dal terremoto in Nepal nel 2015. I dati includono caratteristiche strutturali, materiali utilizzati, posizione geografica, e altre informazioni legali e urbanistiche. L’obiettivo è prevedere, per ciascun edificio, il livello di danno subito (1 = basso, 2 = medio, 3 = severo).
 
 Nella fase di preprocessing, i dati sono stati inizialmente puliti e analizzati per verificarne la completezza. Non sono stati rilevati valori mancanti, né nei dati strutturali (`train_values.csv`), né nelle etichette (`train_labels.csv`) o nei dati di test (`test_values.csv`). I dataset sono stati unificati sulla base del campo `building_id`.
 
