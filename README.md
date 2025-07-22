@@ -1,3 +1,4 @@
+# Richter-sPredictor-AI
 # Richter'sPredictor AI
 
 Richter'sPredictor AI è un progetto di Machine Learning per la previsione del livello di danno subito da edifici in seguito a un terremoto.  
