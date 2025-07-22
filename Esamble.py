@@ -2,41 +2,48 @@ from sklearn.ensemble import VotingClassifier
 from sklearn.metrics import accuracy_score, f1_score, classification_report
 from sklearn.ensemble import RandomForestClassifier
 from catboost import CatBoostClassifier
+from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
+from scipy.stats import mode
+import numpy as np
 import joblib
 
-# === Carica i dati preprocessati ===
-X_train_bal, y_train_bal, X_val_split, y_val_split, _ = joblib.load("preprocessed_data.pkl")
-
-# === Carica modello XGBoost già ottimizzato ===
+# === Caricamento dati ===
+X_train_bal, y_train_bal, X_val_split, y_val_split, _ = joblib.load("preprocessed_unbalanced.pkl")
 best_xgb = joblib.load("best_xgb_model.pkl")
+cv_bagging_clf = joblib.load("cv_bagging_model.pkl")  # ⬅️ Carica modello già addestrato
 
-# === Inizializza gli altri modelli ===
-rf = RandomForestClassifier(n_estimators=100, class_weight='balanced', random_state=42)
-cat = CatBoostClassifier(iterations=100, verbose=0, random_state=42)
-lgbm = LGBMClassifier(random_state=42)
+# === Bagging di VotingClassifier ===
+print("\n Bagging VotingClassifier (5 seeds)...")
 
-# === Ensemble con pesi personalizzati ===
-voting_clf = VotingClassifier(
-    estimators=[
-        ('rf', rf),
-        ('cat', cat),
-        ('lgbm', lgbm),
-        ('xgb', best_xgb)
-    ],
-    voting='soft',
-    weights=[1, 1, 1, 2]  
-)
+predictions = []
 
-# === Addestramento ensemble ===
-voting_clf.fit(X_train_bal, y_train_bal)
+for seed in [0, 1, 2, 3, 4]:
+    rf_bag = RandomForestClassifier(n_estimators=100, class_weight='balanced', random_state=seed)
+    cat_bag = CatBoostClassifier(iterations=100, verbose=0, random_state=seed)
+    lgbm_bag = LGBMClassifier(random_state=seed)
 
-# === Valutazione ===
-y_pred = voting_clf.predict(X_val_split)
+    voting_bag = VotingClassifier(
+        estimators=[
+            ('rf', rf_bag),
+            ('cat', cat_bag),
+            ('xgb', best_xgb),
+            ('cvb', cv_bagging_clf),
+            ('lgbm', lgbm_bag)
+        ],
+        voting='soft',
+        weights=(1, 1, 2, 1.5, 0.3)
+    )
 
-print("\nEnsemble VotingClassifier")
-print("Accuracy:", accuracy_score(y_val_split, y_pred))
-print("F1 micro:", f1_score(y_val_split, y_pred, average='micro'))
-print("F1 macro:", f1_score(y_val_split, y_pred, average='macro'))
-print(classification_report(y_val_split, y_pred))
+    voting_bag.fit(X_train_bal, y_train_bal)
+    preds = voting_bag.predict(X_val_split)
+    predictions.append(preds)
 
+# === Maggioranza delle predizioni ===
+y_pred_bagged = mode(np.array(predictions), axis=0).mode.squeeze()
+
+print("\n Bagged VotingClassifier Performance (modalità su 5 modelli):")
+print("Accuracy:", accuracy_score(y_val_split, y_pred_bagged))
+print("F1 micro:", f1_score(y_val_split, y_pred_bagged, average='micro'))
+print("F1 macro:", f1_score(y_val_split, y_pred_bagged, average='macro'))
+print(classification_report(y_val_split, y_pred_bagged))
