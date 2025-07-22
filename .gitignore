@@ -22,6 +22,9 @@ preprocessed_unbalanced.pkl
 cv_bagging_model.pkl
 best_xgb_model.pkl
 submission.csv
+ensemble_model.pkl
+best_rf_model.pkl
+best_cat_model.pkl
 
 
 catboost_info/
