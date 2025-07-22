@@ -73,36 +73,34 @@ Ogni modello stampa a console il suo `classification_report` con precision, reca
 
 Il progetto è organizzato in modo modulare per separare chiaramente i dati, il codice, i modelli e i risultati. La seguente struttura permette una gestione efficiente del flusso di lavoro e una facile estensione futura.
 
+```text
 Richter_sPredictor_AI/
 │
 ├── data/
-│ ├── raw/ # File originali forniti dalla competizione
-│ │ ├── train_values.csv
-│ │ ├── train_labels.csv
-│ │ └── test_values.csv
-│ └── processed_unprocessed/ # Dati preprocessati, con e senza bilanciamento
-│ ├── preprocessed_data.pkl
-│ └── preprocessed_unbalanced.pkl
+│   ├── raw/                             # File originali forniti dalla competizione
+│   │   ├── train_values.csv
+│   │   ├── train_labels.csv
+│   │   └── test_values.csv
+│   └── processed_unprocessed/           # Dati preprocessati, con e senza bilanciamento
+│       ├── preprocessed_data.pkl
+│       └── preprocessed_unbalanced.pkl
 │
-├── models/ # Modelli addestrati e salvati
-│ ├── best_xgb_model.pkl
-│ └── cv_bagging_model.pkl
+├── models/                              # Modelli addestrati e salvati
+│   ├── best_xgb_model.pkl
+│   └── cv_bagging_model.pkl
 │
-├── scripts/ # Codice suddiviso per funzione
-│ ├── preprocessing.py # Tutto il flusso di preprocessing dati
-│ ├── train.py # Addestramento e valutazione di tutti i modelli principali
-│ ├── xgb_tuning.py # Tuning automatico di XGBoost via GridSearchCV
-│ └── esamble.py # Ensemble Voting + Bagging finale
+├── scripts/                             # Codice suddiviso per funzione
+│   ├── preprocessing.py                 # Tutto il flusso di preprocessing dati
+│   ├── train.py                         # Addestramento e valutazione di tutti i modelli principali
+│   ├── xgb_tuning.py                    # Tuning automatico di XGBoost via GridSearchCV
+│   └── esamble.py                       # Ensemble Voting + Bagging finale
 │
-├── submission/ # File CSV da caricare sulla piattaforma (opzionale)
-│ └── submission.csv
+├── submission/                          # File CSV da caricare sulla piattaforma (opzionale)
+│   └── submission.csv
 │
-├── reports/ # Output testuali, classificazioni, PDF, grafici
-│ └── progetti_fia.pdf
-│
-├── requirements.txt # (opzionale) dipendenze Python usate nel progetto
-└── README.md # Documentazione del progetto
-
+├── requirements.txt                     # (opzionale) dipendenze Python usate nel progetto
+└── README.md                            # Documentazione del progetto
+```
 
 Ogni cartella ha un ruolo specifico:
 - `data/` contiene sia i dati grezzi sia quelli preprocessati.

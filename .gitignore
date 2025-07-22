@@ -19,4 +19,11 @@ submission_format.csv
 submission_*.csv
 #*.pkl
 
+preprocessed_data.pkl
+preprocessed_unbalanced.pkl
+cv_bagging_model.pkl
+best_xgb_model.pkl
+submission.csv
+
+
 catboost_info/
