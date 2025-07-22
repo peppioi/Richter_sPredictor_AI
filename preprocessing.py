@@ -3,9 +3,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler, RobustScaler
 from imblearn.over_sampling import SMOTE
 import numpy as np
 from sklearn.model_selection import train_test_split
-from imblearn.over_sampling import SMOTE
 import joblib
-#from sklearn.feature_selection import VarianceThreshold, SelectKBest, f_classif
 from sklearn.feature_selection import SelectFromModel
 from sklearn.ensemble import RandomForestClassifier
 
@@ -31,16 +29,46 @@ X_train = train_df.drop(columns=["building_id", "damage_grade"])
 y_train = train_df["damage_grade"]
 X_test = test_values.drop(columns=["building_id"])
 
-""" # === Feature Engineering ===
-X_train["building_volume"] = X_train["area_percentage"] * X_train["height_percentage"]
-X_test["building_volume"] = X_test["area_percentage"] * X_test["height_percentage"]
+# === Feature Engineering: Superstructure Quality ===
+def get_superstructure_quality(df):
+    df["superstructure_quality"] = -1
 
-X_train["age_per_floor"] = X_train["age"] / (X_train["count_floors_pre_eq"] + 1)
-X_test["age_per_floor"] = X_test["age"] / (X_test["count_floors_pre_eq"] + 1)
+    good = ["has_superstructure_bamboo", "has_superstructure_rc_engineered",
+            "has_superstructure_rc_non_engineered", "has_superstructure_timber"]
+    bad = ["has_superstructure_adobe_mud", "has_superstructure_mud_mortar_stone",
+           "has_superstructure_cement_mortar_stone", "has_superstructure_mud_mortar_brick",
+           "has_superstructure_cement_mortar_brick", "has_superstructure_stone_flag"]
 
-X_train["floor_height_ratio"] = X_train["height_percentage"] / (X_train["count_floors_pre_eq"] + 1)
-X_test["floor_height_ratio"] = X_test["height_percentage"] / (X_test["count_floors_pre_eq"] + 1)
- """
+    has_good = df[good].any(axis=1)
+    has_bad = df[bad].any(axis=1)
+
+    df.loc[has_good, "superstructure_quality"] = 1
+    df.loc[df["has_superstructure_other"] == 1, "superstructure_quality"] = 0
+    df.loc[
+        (has_good & (df["has_superstructure_other"] == 1)) |
+        (has_good & has_bad) |
+        ((df["has_superstructure_other"] == 1) & has_bad),
+        "superstructure_quality"
+    ] = 0
+
+    return df
+
+X_train = get_superstructure_quality(X_train)
+X_test = get_superstructure_quality(X_test)
+
+
+# === Feature Engineering: Geo Risk based on geo_level_1_id ===
+def get_geo_risk(df_raw, y_raw, df_target, geo_level=1):
+    joined = df_raw.join(y_raw)
+    risk_stats = joined.groupby(f"geo_level_{geo_level}_id")["damage_grade"].value_counts(normalize=True).unstack(fill_value=0)
+
+    for grade in [1, 2, 3]:
+        df_target[f"geo_{geo_level}_risk_grade_{grade}"] = df_target[f"geo_level_{geo_level}_id"].map(risk_stats.get(grade, 0))
+
+    return df_target
+
+X_train = get_geo_risk(X_train, y_train, X_train, geo_level=1)
+X_test = get_geo_risk(X_train, y_train, X_test, geo_level=1)
 
 # ===Riconoscimento automatico delle colonne ===
 categorical_cols = X_train.select_dtypes(include="object").columns.tolist()
@@ -57,7 +85,7 @@ for col in numeric_cols:
     if unique_vals <= 2:
         print(f"{col}: variabile binaria - outlier non applicabile")
         continue
-    
+
     q_low = X_train[col].quantile(0.01)
     q_high = X_train[col].quantile(0.99)
     count_low = (X_train[col] < q_low).sum()
@@ -67,31 +95,6 @@ for col in numeric_cols:
     print(f"{col}: {total_outliers} outlier ({count_low} < {q_low:.2f}, {count_high} > {q_high:.2f})")
 
 print(f"\nTotale outlier sommati su tutte le feature non binarie: {sum(outlier_counts.values())}")
-
-""" # === Winsorization corretta: calcolo limiti dal train ===
-def compute_winsor_limits(df, cols, lower=0.01, upper=0.99):
-    return {col: (df[col].quantile(lower), df[col].quantile(upper)) for col in cols}
-
-def apply_winsor_limits(df, limits):
-    df_capped = df.copy()
-    for col, (low, high) in limits.items():
-        df_capped[col] = np.clip(df[col], low, high)
-    return df_capped
-
-# Calcola i limiti sul training set
-winsor_limits = compute_winsor_limits(X_train, numeric_cols)
-
-# Applica i limiti sia a train che a test
-X_train[numeric_cols] = apply_winsor_limits(X_train[numeric_cols], winsor_limits)
-X_test[numeric_cols] = apply_winsor_limits(X_test[numeric_cols], winsor_limits)
-
-print("\n=== Winsorization completata ===")
-for col in numeric_cols[:3]:  # Mostra solo le prime 3 per brevità
-    low, high = winsor_limits[col]
-    print(f"Colonna '{col}': limiti applicati [{low:.2f}, {high:.2f}]")
-
-print("Esempio valori dopo winsorization (train):")
-print(X_train[numeric_cols[:3]].describe()) """
 
 # === Scaling delle colonne numeriche ===
 scaler = RobustScaler()
@@ -106,13 +109,10 @@ print("Media e std (prime 3 feature numeriche, train):")
 print(X_train_num_df[numeric_cols[:3]].agg(['mean', 'std']))
 
 #=====GESTIONE FEATURE CATEGORICHE=====
-# ===OneHotEncoding sulle categoriche ===
 encoder = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
 X_train_cat = encoder.fit_transform(X_train[categorical_cols])
 X_test_cat = encoder.transform(X_test[categorical_cols])
 
-
-# ===Ricostruzione dei DataFrame encoded ===
 encoded_col_names = encoder.get_feature_names_out(categorical_cols)
 X_train_cat_df = pd.DataFrame(X_train_cat, columns=encoded_col_names, index=X_train.index)
 X_test_cat_df = pd.DataFrame(X_test_cat, columns=encoded_col_names, index=X_test.index)
@@ -122,8 +122,6 @@ print(f"Colonne categoriche originali: {len(categorical_cols)}")
 print(f"Nuove colonne generate: {len(encoded_col_names)}")
 print("Esempio colonne codificate:", list(encoded_col_names[:5]))
 
-
-# ===Unione numeriche scalate + categoriche codificate ===
 X_train_final = pd.concat([X_train_num_df.reset_index(drop=True), 
                            X_train_cat_df.reset_index(drop=True)], axis=1)
 X_test_final = pd.concat([X_test_num_df.reset_index(drop=True), 
@@ -133,7 +131,6 @@ print("\n=== Unione numeriche + categoriche completata ===")
 print("Shape finale X_train:", X_train_final.shape)
 print("Shape finale X_test:", X_test_final.shape)
 
-# === SPLIT ===
 X_train_split, X_val_split, y_train_split, y_val_split = train_test_split(
     X_train_final, y_train, test_size=0.2, stratify=y_train, random_state=42
 )
@@ -144,40 +141,10 @@ print("Shape X_val_split:", X_val_split.shape)
 print("Distribuzione y_train_split:")
 print(y_train_split.value_counts(normalize=True))
 
-""" # === FEATURE SELECTION ===
-# Rimuovi le feature con varianza molto bassa (es. dummies inutili)
-var_thresh = VarianceThreshold(threshold=0.001)
-X_train_split_var = var_thresh.fit_transform(X_train_split)
-X_val_split_var = var_thresh.transform(X_val_split)
-
-# Stampa il numero di feature rimaste dopo VarianceThreshold
-num_features_var = X_train_split_var.shape[1]
-print(f"\n=== VarianceThreshold completato ===")
-print(f"Numero di feature dopo rimozione bassa varianza: {num_features_var}")
-
-# Seleziona le migliori k feature secondo ANOVA F-test
-k_best = 75
-selector = SelectKBest(score_func=f_classif, k=k_best)
-X_train_split_sel = selector.fit_transform(X_train_split_var, y_train_split)
-X_val_split_sel = selector.transform(X_val_split_var)
-
-# Recupera i nomi delle colonne selezionate
-# Serve ricostruire i nomi dopo VarianceThreshold
-feature_names_after_var = X_train_split.columns[var_thresh.get_support()]
-selected_feature_names = feature_names_after_var[selector.get_support()]
-
-print(f"\n=== SelectKBest completato ===")
-print(f"Top {k_best} feature selezionate (ANOVA F-test):")
-for i, name in enumerate(selected_feature_names):
-    print(f"{i+1}. {name}") """
-
-# === FEATURE SELECTION INTELLIGENTE ===
-# Allena un modello per valutare l'importanza delle feature
 rf_selector = RandomForestClassifier(n_estimators=100, random_state=42, class_weight='balanced')
 rf_selector.fit(X_train_split, y_train_split)
 
-# Seleziona le feature più importanti
-sfm = SelectFromModel(rf_selector, threshold="median")  # puoi provare anche "mean" o un valore numerico
+sfm = SelectFromModel(rf_selector, threshold="median")
 X_train_split_sel = sfm.transform(X_train_split)
 X_val_split_sel = sfm.transform(X_val_split)
 
@@ -188,9 +155,12 @@ print(f"Feature selezionate: {len(selected_feature_names)}")
 for i, name in enumerate(selected_feature_names):
     print(f"{i+1}. {name}")
 
-# Sovrascrivi le variabili da passare a SMOTE e ai modelli
 X_train_split = X_train_split_sel
 X_val_split = X_val_split_sel
+
+# === Salvataggio dati NON bilanciati ===
+joblib.dump((X_train_split, y_train_split, X_val_split, y_val_split, X_test_final), "preprocessed_unbalanced.pkl")
+print("\n=== Dati NON bilanciati salvati in 'preprocessed_unbalanced.pkl' ===")
 
 # === SMOTE SOLO SUL TRAINING ===
 smote = SMOTE(random_state=42)
@@ -200,8 +170,5 @@ print("\n=== SMOTE applicato ===")
 print("Distribuzione y_train_bal (dopo oversampling):")
 print(y_train_bal.value_counts(normalize=True))
 
-# Salvataggio dei dati preprocessati
 joblib.dump((X_train_bal, y_train_bal, X_val_split, y_val_split, X_test_final), "preprocessed_data.pkl")
-
 print("\n=== Dati preprocessati salvati in 'preprocessed_data.pkl' ===")
-

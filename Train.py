@@ -10,7 +10,7 @@ from mord import LogisticAT
 
 
 # === Carica i dati preprocessati ===
-X_train_bal, y_train_bal, X_val_split, y_val_split, _ = joblib.load("preprocessed_data.pkl")
+X_train_bal, y_train_bal, X_val_split, y_val_split, X_test_final = joblib.load("preprocessed_unbalanced.pkl")
 
 # === Dizionario per salvare i risultati ===
 results = {}
@@ -27,7 +27,7 @@ print("F1 macro:", f1_score(y_val_split, y_pred_rf, average='macro'))
 print(classification_report(y_val_split, y_pred_rf))
 results['Random Forest'] = f1_score(y_val_split, y_pred_rf, average='macro')
 
-""" # === Modello 2: XGBoost (ottimizzato) ===
+ # === Modello 2: XGBoost (ottimizzato) ===
 # Se esiste già il file del modello tunato, lo carica; altrimenti lo crea e salva
 if os.path.exists("best_xgb_model.pkl"):
     best_xgb = joblib.load("best_xgb_model.pkl")
@@ -49,7 +49,7 @@ print("Accuracy:", accuracy_score(y_val_split, y_pred_best_xgb))
 print("F1 micro:", f1_score(y_val_split, y_pred_best_xgb, average='micro'))
 print("F1 macro:", f1_score(y_val_split, y_pred_best_xgb, average='macro'))
 print(classification_report(y_val_split, y_pred_best_xgb))
-results['XGBoost'] = f1_score(y_val_split, y_pred_best_xgb, average='macro') """
+results['XGBoost'] = f1_score(y_val_split, y_pred_best_xgb, average='macro') 
 
 # === Modello 3: CatBoost ===
 cat = CatBoostClassifier(iterations=100, verbose=0, random_state=42)
@@ -84,19 +84,31 @@ print("F1 macro:", f1_score(y_val_split, y_pred_lgbm, average='macro'))
 print(classification_report(y_val_split, y_pred_lgbm))
 results['LightGBM'] = f1_score(y_val_split, y_pred_lgbm, average='macro')
 
-# === Modello 5: MLPClassifier (NON UTILE PERFORMANCE TROPPO BASSE)===
-from sklearn.neural_network import MLPClassifier
+from sklearn.ensemble import BaggingClassifier
 
-mlp = MLPClassifier(hidden_layer_sizes=(64, 32), max_iter=300, early_stopping=True, random_state=42)
-mlp.fit(X_train_bal, y_train_bal)
-y_pred_mlp = mlp.predict(X_val_split)
+print("\n🔁 Cross-Validated BaggingClassifier (CVBaggingClassifier)...")
 
-print("\nMLPClassifier")
-print("Accuracy:", accuracy_score(y_val_split, y_pred_mlp))
-print("F1 micro:", f1_score(y_val_split, y_pred_mlp, average='micro'))
-print("F1 macro:", f1_score(y_val_split, y_pred_mlp, average='macro'))
-print(classification_report(y_val_split, y_pred_mlp))
-results['MLPClassifier'] = f1_score(y_val_split, y_pred_mlp, average='macro')
+cv_bagging_clf = BaggingClassifier(
+    estimator=RandomForestClassifier(n_estimators=100, class_weight='balanced', random_state=42),
+    n_estimators=5,
+    random_state=42,
+    n_jobs=-1
+)
+
+cv_bagging_clf.fit(X_train_bal, y_train_bal)
+y_pred_cvbag = cv_bagging_clf.predict(X_val_split)
+
+print("\n🧠 CV BaggingClassifier Performance:")
+print("Accuracy:", accuracy_score(y_val_split, y_pred_cvbag))
+print("F1 micro:", f1_score(y_val_split, y_pred_cvbag, average='micro'))
+print("F1 macro:", f1_score(y_val_split, y_pred_cvbag, average='macro'))
+print(classification_report(y_val_split, y_pred_cvbag))
+
+# === Salvataggio del modello già allenato ===
+joblib.dump(cv_bagging_clf, "cv_bagging_model.pkl")
+
+
+
 
 # === Riepilogo finale ===
 print("\nRiepilogo F1 macro:")
