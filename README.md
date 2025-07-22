@@ -7,7 +7,11 @@ Il progetto si basa sui dati reali del terremoto in Nepal del 2015 e mira a forn
 
 ## Dataset & Preprocessing
 
+<<<<<<< HEAD
 Il progetto si basa sui dati della competizione "Nepal Earthquake Damage Assessment", che mette a disposizione informazioni dettagliate su oltre 260.000 edifici colpiti dal terremoto in Nepal nel 2015. I dati includono caratteristiche strutturali, materiali utilizzati, posizione geografica, e altre informazioni legali e urbanistiche. L’obiettivo è prevedere, per ciascun edificio, il livello di danno subito (1 = basso, 2 = medio, 3 = severo).
+=======
+Il progetto si basa sui dati della competizione " Nepal Earthquake Damage Assessment ", che mette a disposizione informazioni dettagliate su oltre 260.000 edifici colpiti dal terremoto in Nepal nel 2015. I dati includono caratteristiche strutturali, materiali utilizzati, posizione geografica, e altre informazioni legali e urbanistiche. L’obiettivo è prevedere, per ciascun edificio, il livello di danno subito (1 = basso, 2 = medio, 3 = severo).
+>>>>>>> 6a8bc239b15b657aa0370371b6f12e10e6c09ae4
 
 Nella fase di preprocessing, i dati sono stati inizialmente puliti e analizzati per verificarne la completezza. Non sono stati rilevati valori mancanti, né nei dati strutturali (`train_values.csv`), né nelle etichette (`train_labels.csv`) o nei dati di test (`test_values.csv`). I dataset sono stati unificati sulla base del campo `building_id`.
 
@@ -73,6 +77,7 @@ Ogni modello stampa a console il suo `classification_report` con precision, reca
 
 Il progetto è organizzato in modo modulare per separare chiaramente i dati, il codice, i modelli e i risultati. La seguente struttura permette una gestione efficiente del flusso di lavoro e una facile estensione futura.
 
+<<<<<<< HEAD
 Richter_sPredictor_AI/
 │
 ├── data/
@@ -103,6 +108,36 @@ Richter_sPredictor_AI/
 ├── requirements.txt # (opzionale) dipendenze Python usate nel progetto
 └── README.md # Documentazione del progetto
 
+=======
+```text
+Richter_sPredictor_AI/
+│
+├── data/
+│   ├── raw/                             # File originali forniti dalla competizione
+│   │   ├── train_values.csv
+│   │   ├── train_labels.csv
+│   │   └── test_values.csv
+│   └── processed_unprocessed/           # Dati preprocessati, con e senza bilanciamento
+│       ├── preprocessed_data.pkl
+│       └── preprocessed_unbalanced.pkl
+│
+├── models/                              # Modelli addestrati e salvati
+│   ├── best_xgb_model.pkl
+│   └── cv_bagging_model.pkl
+│
+├── scripts/                             # Codice suddiviso per funzione
+│   ├── preprocessing.py                 # Tutto il flusso di preprocessing dati
+│   ├── train.py                         # Addestramento e valutazione di tutti i modelli principali
+│   ├── xgb_tuning.py                    # Tuning automatico di XGBoost via GridSearchCV
+│   └── esamble.py                       # Ensemble Voting + Bagging finale
+│
+├── submission/                          # File CSV da caricare sulla piattaforma (opzionale)
+│   └── submission.csv
+│
+├── requirements.txt                     # (opzionale) dipendenze Python usate nel progetto
+└── README.md                            # Documentazione del progetto
+```
+>>>>>>> 6a8bc239b15b657aa0370371b6f12e10e6c09ae4
 
 Ogni cartella ha un ruolo specifico:
 - `data/` contiene sia i dati grezzi sia quelli preprocessati.
