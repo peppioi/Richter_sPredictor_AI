@@ -36,13 +36,15 @@ Il training è stato condotto sulla versione **non bilanciata** del dataset, per
 ### Modelli utilizzati
 
 - **Random Forest**  
-  Utilizzato con `class_weight='balanced'` per compensare lo sbilanciamento delle classi. Offre interpretabilità e buone performance su problemi tabellari.
+  Ottimizzato tramite RandomizedSearchCV su iperparametri chiave (n_estimators, max_depth, min_samples_split, min_samples_leaf), con bilanciamento automatico delle classi tramite class_weight='balanced'.
+  Il modello migliore viene salvato e riutilizzato per evitare ripetizioni del tuning.
 
 - **XGBoost**  
   Uno dei modelli principali del progetto. È stato sottoposto a tuning automatico con `GridSearchCV` su iperparametri chiave (n_estimators, max_depth, learning_rate, ecc.). La versione ottimizzata viene riutilizzata in più fasi del progetto.
 
 - **CatBoost**  
-  Scelto per la sua gestione nativa delle feature categoriche (anche se in questo caso erano già codificate) e per la sua efficienza su dataset di medie dimensioni.
+  Ottimizzato automaticamente con RandomizedSearchCV, testando iterazioni, profondità, learning rate e regolarizzazione.
+  Il modello migliore viene salvato e riutilizzato. Le feature erano già codificate, ma CatBoost si è comunque rivelato efficiente anche su dati preprocessati.
 
 - **LightGBM**  
   Testato con parametri bilanciati e configurato per la classificazione multiclass. Ha mostrato buone performance, pur con maggiore sensibilità alla scelta degli iperparametri.
@@ -88,16 +90,19 @@ Richter_sPredictor_AI/
 │
 ├── models/                              # Modelli addestrati e salvati
 │   ├── best_xgb_model.pkl
+│   ├── best_rf_model.pkl
+│   ├── best_cat_model.pkl
 │   └── cv_bagging_model.pkl
 │
 ├── scripts/                             # Codice suddiviso per funzione
 │   ├── preprocessing.py                 # Tutto il flusso di preprocessing dati
 │   ├── train.py                         # Addestramento e valutazione di tutti i modelli principali
-│   ├── xgb_tuning.py                    # Tuning automatico di XGBoost via GridSearchCV
+│   ├── tune_models.py                   # Tuning automatico dei modelli
 │   └── esamble.py                       # Ensemble Voting + Bagging finale
+│   └── predict.py                       # Predizione sul test set e generazione submission.csv
 │
-├── submission/                          # File CSV da caricare sulla piattaforma (opzionale)
-│   └── submission.csv
+├── submission.csv                         # File CSV da caricare sulla piattaforma (opzionale)
+│   
 │
 ├── requirements.txt                     # (opzionale) dipendenze Python usate nel progetto
 └── README.md                            # Documentazione del progetto
@@ -135,17 +140,20 @@ Output:
 
 ### 2 Addestramento dei modelli
 
-Questo script esegue l’addestramento di tutti i modelli principali, tra cui Random Forest, CatBoost, LightGBM, XGBoost (con tuning automatico se non già eseguito), e salva anche un modello di bagging.
+Salva i modelli ottimizzati di Random Forest, CatBoost, XGBoost e un classificatore di bagging.
+Se i file best_rf_model.pkl, best_cat_model.pkl o best_xgb_model.pkl esistono già, i rispettivi tuning vengono automaticamente saltati.
 
 ```bash
 python scripts/train.py
 ```
 
 Output:  
+- `models/best_rf_model.pkl`  
+- `models/best_cat_model.pkl`  
 - `models/best_xgb_model.pkl`  
 - `models/cv_bagging_model.pkl`
 
-Nota: se il file `best_xgb_model.pkl` esiste già, il tuning viene saltato automaticamente.
+Nota: se i file `best_rf_model.pkl`, `best_cat_model.pkl` o `best_xgb_model.pkl` esistono già, il tuning viene automaticamente saltato.
 
 ---
 
@@ -162,9 +170,17 @@ A video verranno stampate le metriche finali (accuracy, F1 micro, F1 macro) del 
 
 ---
 
+### 4 Predizione sul test set
+
+Questo script carica il miglior modello (tipicamente XGBoost) e genera le predizioni sul file di test (`test_values.csv`), salvando l’output in formato `submission.csv`, pronto per la piattaforma di valutazione.
+
+```bash
+python scripts/predict.py
+```
+
 Per ripetere il flusso completo da zero:
 1. Cancella la cartella `models/`
-2. Rilancia `preprocessing.py`, poi `train.py`, infine `esamble.py`
+2. Rilancia `preprocessing.py`, poi `train.py`, poi `esamble.py` ed infine `predict.py`
 
 
 ## Requisiti

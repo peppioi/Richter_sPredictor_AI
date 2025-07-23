@@ -2,11 +2,9 @@ import joblib
 from sklearn.ensemble import RandomForestClassifier
 from catboost import CatBoostClassifier
 from sklearn.metrics import accuracy_score, f1_score, classification_report
-from xgb_tuning import tune_xgboost
+from tune_models import tune_xgboost, tune_catboost, tune_randomforest
 import os
 from lightgbm import LGBMClassifier
-from tune_models import tune_catboost
-from tune_models import tune_randomforest
 
 
 # === Carica i dati preprocessati ===
@@ -14,18 +12,6 @@ X_train_bal, y_train_bal, X_val_split, y_val_split, X_test_final = joblib.load("
 
 # === Dizionario per salvare i risultati ===
 results = {}
-
-""" # === Modello 1: Random Forest con class_weight ===
-rf = RandomForestClassifier(n_estimators=100, class_weight='balanced', random_state=42)
-rf.fit(X_train_bal, y_train_bal)
-y_pred_rf = rf.predict(X_val_split)
-
-print("\nRandom Forest")
-print("Accuracy:", accuracy_score(y_val_split, y_pred_rf))
-print("F1 micro:", f1_score(y_val_split, y_pred_rf, average='micro'))
-print("F1 macro:", f1_score(y_val_split, y_pred_rf, average='macro'))
-print(classification_report(y_val_split, y_pred_rf))
-results['Random Forest'] = f1_score(y_val_split, y_pred_rf, average='macro') """
 
 # === Random Forest (ottimizzato) ===
 if os.path.exists("models/best_rf_model.pkl"):
@@ -71,18 +57,6 @@ print("F1 micro:", f1_score(y_val_split, y_pred_best_xgb, average='micro'))
 print("F1 macro:", f1_score(y_val_split, y_pred_best_xgb, average='macro'))
 print(classification_report(y_val_split, y_pred_best_xgb))
 results['XGBoost'] = f1_score(y_val_split, y_pred_best_xgb, average='macro') 
-
-""" # === Modello 3: CatBoost ===
-cat = CatBoostClassifier(iterations=100, verbose=0, random_state=42)
-cat.fit(X_train_bal, y_train_bal)
-y_pred_cat = cat.predict(X_val_split)
-
-print("\nCatBoost")
-print("Accuracy:", accuracy_score(y_val_split, y_pred_cat))
-print("F1 micro:", f1_score(y_val_split, y_pred_cat, average='micro'))
-print("F1 macro:", f1_score(y_val_split, y_pred_cat, average='macro'))
-print(classification_report(y_val_split, y_pred_cat))
-results['CatBoost'] = f1_score(y_val_split, y_pred_cat, average='macro') """
 
 # === CatBoost (ottimizzato) ===
 if os.path.exists("models/best_cat_model.pkl"):
