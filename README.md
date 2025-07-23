@@ -1,3 +1,4 @@
+# Richter-sPredictor-AI
 # Richter'sPredictor AI
 
 Richter'sPredictor AI è un progetto di Machine Learning per la previsione del livello di danno subito da edifici in seguito a un terremoto.  
@@ -101,7 +102,6 @@ Richter_sPredictor_AI/
 ├── requirements.txt                     # (opzionale) dipendenze Python usate nel progetto
 └── README.md                            # Documentazione del progetto
 ```
->>>>>>> 6a8bc239b15b657aa0370371b6f12e10e6c09ae4
 
 Ogni cartella ha un ruolo specifico:
 - `data/` contiene sia i dati grezzi sia quelli preprocessati.

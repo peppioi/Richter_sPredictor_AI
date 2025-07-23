@@ -148,6 +148,9 @@ sfm = SelectFromModel(rf_selector, threshold="median")
 X_train_split_sel = sfm.transform(X_train_split)
 X_val_split_sel = sfm.transform(X_val_split)
 
+X_test_final_sel = sfm.transform(X_test_final)
+
+
 selected_feature_names = X_train_split.columns[sfm.get_support()]
 
 print(f"\n=== SelectFromModel (Random Forest) completato ===")
@@ -159,7 +162,7 @@ X_train_split = X_train_split_sel
 X_val_split = X_val_split_sel
 
 # === Salvataggio dati NON bilanciati ===
-joblib.dump((X_train_split, y_train_split, X_val_split, y_val_split, X_test_final), "data/processed_unprocessed/preprocessed_unbalanced.pkl")
+joblib.dump((X_train_split, y_train_split, X_val_split, y_val_split, X_test_final_sel), "data/processed_unprocessed/preprocessed_unbalanced.pkl")
 print("\n=== Dati NON bilanciati salvati in 'preprocessed_unbalanced.pkl' ===")
 
 # === SMOTE SOLO SUL TRAINING ===
@@ -170,5 +173,5 @@ print("\n=== SMOTE applicato ===")
 print("Distribuzione y_train_bal (dopo oversampling):")
 print(y_train_bal.value_counts(normalize=True))
 
-joblib.dump((X_train_bal, y_train_bal, X_val_split, y_val_split, X_test_final), "data/processed_unprocessed/preprocessed_data.pkl")
+joblib.dump((X_train_bal, y_train_bal, X_val_split, y_val_split, X_test_final_sel), "data/processed_unprocessed/preprocessed_data.pkl")
 print("\n=== Dati preprocessati salvati in 'preprocessed_data.pkl' ===")

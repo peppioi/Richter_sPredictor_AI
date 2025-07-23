@@ -1,7 +1,5 @@
 terremoto/
-Terremoto/
 
-.DS_Store
 .DS_Store
 
 .vscode/
@@ -19,13 +17,14 @@ submission_format.csv
 submission_*.csv
 #*.pkl
 
-catboost_info/
-#*.pkl
 preprocessed_data.pkl
 preprocessed_unbalanced.pkl
 cv_bagging_model.pkl
 best_xgb_model.pkl
 submission.csv
+ensemble_model.pkl
+best_rf_model.pkl
+best_cat_model.pkl
 
 
 catboost_info/
