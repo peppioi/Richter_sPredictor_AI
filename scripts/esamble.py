@@ -27,7 +27,6 @@ for seed in [0, 1, 2, 3, 4]:
             ('cat', best_cat),
             ('xgb', best_xgb),
             ('cvb', cv_bagging_clf),
-            # ('lgbm', LGBMClassifier(random_state=seed))  # puoi riattivarlo se vuoi
         ],
         voting='soft',
         weights=(1.5, 1, 3, 2.5)

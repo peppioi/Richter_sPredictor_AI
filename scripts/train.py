@@ -5,8 +5,8 @@ from sklearn.metrics import accuracy_score, f1_score, classification_report
 from xgb_tuning import tune_xgboost
 import os
 from lightgbm import LGBMClassifier
-from sklearn.neural_network import MLPClassifier
-from mord import LogisticAT
+from tune_models import tune_catboost
+from tune_models import tune_randomforest
 
 
 # === Carica i dati preprocessati ===
@@ -15,7 +15,7 @@ X_train_bal, y_train_bal, X_val_split, y_val_split, X_test_final = joblib.load("
 # === Dizionario per salvare i risultati ===
 results = {}
 
-# === Modello 1: Random Forest con class_weight ===
+""" # === Modello 1: Random Forest con class_weight ===
 rf = RandomForestClassifier(n_estimators=100, class_weight='balanced', random_state=42)
 rf.fit(X_train_bal, y_train_bal)
 y_pred_rf = rf.predict(X_val_split)
@@ -25,9 +25,30 @@ print("Accuracy:", accuracy_score(y_val_split, y_pred_rf))
 print("F1 micro:", f1_score(y_val_split, y_pred_rf, average='micro'))
 print("F1 macro:", f1_score(y_val_split, y_pred_rf, average='macro'))
 print(classification_report(y_val_split, y_pred_rf))
+results['Random Forest'] = f1_score(y_val_split, y_pred_rf, average='macro') """
+
+# === Random Forest (ottimizzato) ===
+if os.path.exists("models/best_rf_model.pkl"):
+    best_rf = joblib.load("models/best_rf_model.pkl")
+    print("\nModello Random Forest ottimizzato caricato da file.")
+else:
+    print("\nEsecuzione tuning Random Forest (prima volta)...")
+    best_rf = tune_randomforest(X_train_bal, y_train_bal)
+    joblib.dump(best_rf, "models/best_rf_model.pkl")
+    print("Modello Random Forest ottimizzato salvato in 'best_rf_model.pkl'")
+
+# Addestramento
+best_rf.fit(X_train_bal, y_train_bal)
+y_pred_rf = best_rf.predict(X_val_split)
+
+print("\nRandom Forest (ottimizzato)")
+print("Accuracy:", accuracy_score(y_val_split, y_pred_rf))
+print("F1 micro:", f1_score(y_val_split, y_pred_rf, average='micro'))
+print("F1 macro:", f1_score(y_val_split, y_pred_rf, average='macro'))
+print(classification_report(y_val_split, y_pred_rf))
 results['Random Forest'] = f1_score(y_val_split, y_pred_rf, average='macro')
 
- # === Modello 2: XGBoost (ottimizzato) ===
+# === Modello 2: XGBoost (ottimizzato) ===
 # Se esiste già il file del modello tunato, lo carica; altrimenti lo crea e salva
 if os.path.exists("models/best_xgb_model.pkl"):
     best_xgb = joblib.load("models/best_xgb_model.pkl")
@@ -51,7 +72,7 @@ print("F1 macro:", f1_score(y_val_split, y_pred_best_xgb, average='macro'))
 print(classification_report(y_val_split, y_pred_best_xgb))
 results['XGBoost'] = f1_score(y_val_split, y_pred_best_xgb, average='macro') 
 
-# === Modello 3: CatBoost ===
+""" # === Modello 3: CatBoost ===
 cat = CatBoostClassifier(iterations=100, verbose=0, random_state=42)
 cat.fit(X_train_bal, y_train_bal)
 y_pred_cat = cat.predict(X_val_split)
@@ -61,7 +82,29 @@ print("Accuracy:", accuracy_score(y_val_split, y_pred_cat))
 print("F1 micro:", f1_score(y_val_split, y_pred_cat, average='micro'))
 print("F1 macro:", f1_score(y_val_split, y_pred_cat, average='macro'))
 print(classification_report(y_val_split, y_pred_cat))
+results['CatBoost'] = f1_score(y_val_split, y_pred_cat, average='macro') """
+
+# === CatBoost (ottimizzato) ===
+if os.path.exists("models/best_cat_model.pkl"):
+    best_cat = joblib.load("models/best_cat_model.pkl")
+    print("\nModello CatBoost ottimizzato caricato da file.")
+else:
+    print("\nEsecuzione tuning CatBoost (prima volta)...")
+    best_cat = tune_catboost(X_train_bal, y_train_bal)
+    joblib.dump(best_cat, "models/best_cat_model.pkl")
+    print("Modello CatBoost ottimizzato salvato in 'best_cat_model.pkl'")
+
+# Addestramento
+best_cat.fit(X_train_bal, y_train_bal)
+y_pred_cat = best_cat.predict(X_val_split)
+
+print("\nCatBoost (ottimizzato)")
+print("Accuracy:", accuracy_score(y_val_split, y_pred_cat))
+print("F1 micro:", f1_score(y_val_split, y_pred_cat, average='micro'))
+print("F1 macro:", f1_score(y_val_split, y_pred_cat, average='macro'))
+print(classification_report(y_val_split, y_pred_cat))
 results['CatBoost'] = f1_score(y_val_split, y_pred_cat, average='macro')
+
 
 # === Modello 4: LightGBM ===
 lgbm = LGBMClassifier(
